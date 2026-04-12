@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AirSense v4.1 — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#060b14;--bg2:#0b1220;--bg3:#101928;--card:#0c1522;--b1:rgba(99,179,237,.06);--b2:rgba(99,179,237,.14);--b3:rgba(99,179,237,.25);--sky:#63b3ed;--sky2:#4299e1;--sky3:#2b6cb0;--mint:#48bb78;--rose:#fc8181;--amber:#f6ad55;--violet:#b794f4;--teal:#4fd1c5;--t1:#edf2f7;--t2:#a0aec0;--t3:#4a5568;--t4:#2d3748;--good:#48bb78;--mod:#f6ad55;--bad:#ed8936;--dngr:#fc8181;--mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;--r:10px;--r2:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:13px;scroll-behavior:smooth}
+body{font-family:'Times New Roman',serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(66,153,225,.05) 0%,transparent 55%),radial-gradient(ellipse 40% 60% at 85% 90%,rgba(72,187,120,.03) 0%,transparent 55%)}
+/* Header */
+header{position:sticky;top:0;z-index:200;background:rgba(6,11,20,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--b2);height:54px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.logo-icon{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--sky2),var(--teal));display:grid;place-items:center;font-size:15px;box-shadow:0 0 18px rgba(66,153,225,.25)}
+.logo-text{font-weight:800;font-size:16px;letter-spacing:-.5px}
+.logo-ver{font-family:var(--mono);font-size:10px;color:var(--t3);margin-left:4px}
+.conn-area{display:flex;align-items:center;gap:6px}
+.ip-field{background:var(--bg3);border:1px solid var(--b2);color:var(--t1);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:7px;width:160px;outline:none;transition:.2s}
+.ip-field:focus{border-color:var(--sky2)}
+.port-field{width:50px;background:var(--bg3);border:1px solid var(--b2);color:var(--t1);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:7px;outline:none}
+.conn-btn{background:var(--sky2);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:.2s;white-space:nowrap}
+.conn-btn:hover{background:var(--sky3)}
+.conn-btn.disc{background:#276749}
+.conn-btn.disc:hover{background:#22543d}
+.spill{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid;flex-shrink:0}
+.spill.off{border-color:rgba(252,129,129,.3);color:var(--rose);background:rgba(252,129,129,.07)}
+.spill.on{border-color:rgba(72,187,120,.3);color:var(--mint);background:rgba(72,187,120,.07)}
+.spill.cng{border-color:rgba(246,173,85,.3);color:var(--amber);background:rgba(246,173,85,.07)}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.sdot.p{animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+/* Statusbar */
+.sbar{background:rgba(11,18,32,.9);border-bottom:1px solid var(--b1);padding:3px 20px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:10px;font-family:var(--mono);color:var(--t3);position:relative;z-index:1}
+.si{display:flex;align-items:center;gap:4px}.si b{color:var(--t2)}.ok{color:var(--mint)}.err{color:var(--rose)}.wrn{color:var(--amber)}
+.sr{margin-left:auto;display:flex;gap:12px}
+/* Nav */
+nav{background:var(--bg2);border-bottom:1px solid var(--b1);display:flex;padding:0 16px;overflow-x:auto;gap:0;position:sticky;top:54px;z-index:100}
+nav::-webkit-scrollbar{display:none}
+.ntab{background:none;border:none;color:var(--t3);padding:10px 13px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;display:flex;align-items:center;gap:5px;font-family:var(--sans)}
+.ntab:hover{color:var(--t2)}.ntab.active{color:var(--sky);border-bottom-color:var(--sky)}
+.nbadge{background:var(--rose);color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;font-family:var(--mono);min-width:15px;text-align:center}
+/* Main */
+main{padding:16px 20px;max-width:1500px;margin:0 auto;position:relative;z-index:1}
+.tab-page{display:none}.tab-page.active{display:block}
+/* Offline Banner */
+.ob{display:flex;align-items:center;gap:10px;background:rgba(252,129,129,.06);border:1px solid rgba(252,129,129,.2);border-radius:var(--r);padding:10px 16px;margin-bottom:14px;font-size:12px;color:var(--t2)}
+.ob.h{display:none}
+/* Grids */
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:1300px){.g6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1000px){.g5,.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.g6,.g5,.g4,.g3,.g2{grid-template-columns:1fr!important}}
+/* Hero */
+.hero{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:16px 20px;margin-bottom:12px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 30% 80% at 0% 50%,rgba(66,153,225,.04),transparent);pointer-events:none}
+.aqi-wrap{flex-shrink:0;position:relative;width:90px;height:90px}
+.aqi-wrap svg{transform:rotate(-90deg)}
+.aqi-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.aqi-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1;color:var(--sky)}
+.aqi-lbl{font-size:8px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.hero-body{flex:1;min-width:160px}
+.hero-body h2{font-size:16px;font-weight:700;margin-bottom:4px}
+.hero-body p{font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:8px}
+.tag-row{display:flex;gap:5px;flex-wrap:wrap}
+.tag{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(99,179,237,.08);border:1px solid rgba(99,179,237,.15);color:var(--sky)}
+.tag.g{background:rgba(72,187,120,.08);border-color:rgba(72,187,120,.15);color:var(--mint)}
+.tag.a{background:rgba(246,173,85,.08);border-color:rgba(246,173,85,.15);color:var(--amber)}
+.tag.r{background:rgba(252,129,129,.08);border-color:rgba(252,129,129,.15);color:var(--rose)}
+.wu-strip{background:rgba(246,173,85,.07);border:1px solid rgba(246,173,85,.2);border-radius:6px;padding:5px 12px;margin-top:8px;font-size:10px;color:var(--amber);display:flex;align-items:center;gap:6px}
+.wu-strip.h{display:none}
+.hclk{text-align:right;min-width:105px;flex-shrink:0}
+.clk-t{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--violet);letter-spacing:1px}
+.clk-d{font-size:11px;color:var(--t2);margin-top:3px}
+.clk-s{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+/* Sensor Card — ALL start as offline (tag=OFF, val=--) */
+.sc{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:13px;position:relative;overflow:hidden;transition:.2s;cursor:default}
+.sc:hover{border-color:var(--b2);transform:translateY(-1px)}
+.sc-line{position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc-col,var(--sky2));transform:scaleX(0);transform-origin:left;transition:transform .5s}
+.sc.live .sc-line{transform:scaleX(1)}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sc-name{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:.8px;text-transform:uppercase}
+/* Tag states */
+.stag{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;border:1px solid}
+.stag.OFF{background:rgba(74,85,104,.1);border-color:rgba(74,85,104,.2);color:var(--t3)}
+.stag.ON{background:rgba(72,187,120,.1);border-color:rgba(72,187,120,.2);color:var(--mint)}
+.stag.WARN{background:rgba(246,173,85,.1);border-color:rgba(246,173,85,.2);color:var(--amber)}
+.stag.ERR{background:rgba(252,129,129,.1);border-color:rgba(252,129,129,.2);color:var(--rose)}
+.sc-val{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1;margin-bottom:2px;color:var(--t3);transition:color .3s}
+.sc.live .sc-val{color:var(--t1)}
+.sc-unit{font-size:9px;color:var(--t3);letter-spacing:.4px;margin-bottom:8px}
+.sc-bar-bg{height:2px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.sc-bar{height:100%;border-radius:2px;width:0%;transition:width .5s cubic-bezier(.4,0,.2,1),background .3s}
+.sc-sts{font-size:10px;font-weight:600;color:var(--t3);transition:color .3s}
+.sc.live .sc-sts{color:var(--sc-col,var(--mint))}
+.sc-hw{font-size:9px;color:var(--t4);margin-top:3px;font-family:var(--mono)}
+/* Sys cards */
+.sysc{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:11px 13px;display:flex;flex-direction:column;gap:3px}
+.sysc .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);font-family:var(--mono)}
+.sysc .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--t1)}
+.sysc .sub{font-size:10px;color:var(--t2)}
+/* Generic card */
+.card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;transition:.2s;margin-bottom:12px}
+.card-hd{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.5px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;text-transform:uppercase}
+.chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.chart-title{font-size:12px;font-weight:700;color:var(--t1)}
+.ctabs{display:flex;gap:3px;flex-wrap:wrap}
+.ct{background:var(--bg3);border:1px solid var(--b1);color:var(--t3);padding:3px 9px;border-radius:5px;font-size:10px;cursor:pointer;font-weight:600;transition:.15s;font-family:var(--sans)}
+.ct:hover{color:var(--t2)}.ct.active{background:var(--sky2);color:#fff;border-color:var(--sky2)}
+/* Table */
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{padding:8px 10px;text-align:left;color:var(--t3);font-size:9px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--b2);font-weight:700;white-space:nowrap;background:var(--bg3)}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--b1);font-family:var(--mono);color:var(--t2)}
+tbody tr:hover td{background:rgba(99,179,237,.02)}
+tbody tr:last-child td{border-bottom:none}
+/* Detail sensor cards */
+.dc{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;border-top:3px solid var(--t4);transition:.2s}
+.dc.online{border-top-color:var(--mint)}.dc.warn{border-top-color:var(--amber)}.dc.danger{border-top-color:var(--rose)}
+.dc-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dc-title{font-size:13px;font-weight:700}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:10px;line-height:1.9;margin-top:10px}
+.kv .k{color:var(--t3);font-family:var(--mono);font-size:9px;text-transform:uppercase}.kv .v{color:var(--t2)}.kv b{color:var(--sky)}.kv .w{color:var(--amber)}
+/* OLED */
+.oled{background:#000;border:2px solid #111;border-radius:3px;font-family:'Courier New',monospace;padding:3px 5px;overflow:hidden;box-shadow:0 0 25px rgba(0,0,0,.7)}
+.oled-ln{display:flex;justify-content:space-between;font-size:8.5px;line-height:1.45;color:#ccc}
+.oled-ln.sep{border-bottom:1px solid #1a1a1a;margin-bottom:1px;padding-bottom:1px}
+/* GPS */
+.gps-map{background:var(--bg3);border-radius:8px;height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--t3);font-size:12px}
+.gps-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.gs{text-align:center;background:var(--bg3);border-radius:8px;padding:8px}
+.gs .gl{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.gs .gv{font-size:15px;font-weight:700;font-family:var(--mono);color:var(--t1);margin:2px 0}
+.gs .gu{font-size:9px;color:var(--t3)}
+/* Alerts */
+.al-item{display:flex;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--b1);border-left:3px solid var(--amber);border-radius:var(--r);margin-bottom:6px;animation:fi .3s ease}
+.al-item.d{border-left-color:var(--rose)}.al-item.i{border-left-color:var(--sky)}.al-item.ok{border-left-color:var(--mint)}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.al-msg{font-size:12px;line-height:1.5;color:var(--t1)}.al-time{font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:2px}
+/* Pin table */
+.pin-t th{background:var(--bg3);border:1px solid var(--b2)}.pin-t td{border:1px solid var(--b1)}.pin-t td:first-child{color:var(--sky);font-weight:700}
+.pt{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700}
+.pt.adc{background:rgba(246,173,85,.1);color:var(--amber)}.pt.uart{background:rgba(99,179,237,.1);color:var(--sky)}.pt.i2c{background:rgba(183,148,244,.1);color:var(--violet)}.pt.gpio{background:rgba(72,187,120,.1);color:var(--mint)}.pt.pwr{background:rgba(252,129,129,.1);color:var(--rose)}
+/* Code */
+.code{background:var(--bg3);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:10px;color:var(--mint);line-height:1.9;overflow-x:auto;white-space:pre}
+/* Settings */
+.sg{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;margin-bottom:10px}
+.sg-hd{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between}
+.sr2{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(99,179,237,.03);gap:8px}
+.sr2:last-child{border-bottom:none}
+.sr2-lbl{font-size:12px;font-weight:600}.sr2-sub{font-size:10px;color:var(--t3);margin-top:1px}
+input[type=text],input[type=number],select,textarea{background:var(--bg3);border:1px solid var(--b2);color:var(--t1);padding:5px 9px;border-radius:6px;font-family:var(--mono);font-size:11px;outline:none;transition:.2s}
+input:focus,select:focus{border-color:var(--sky2)}
+.tog{width:36px;height:20px;background:var(--bg3);border-radius:10px;border:1px solid var(--b2);cursor:pointer;position:relative;transition:.25s;flex-shrink:0}
+.tog.on{background:var(--mint);border-color:var(--mint)}.tog::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:.25s}.tog.on::after{left:18px}
+/* Flash log */
+.fl-box{background:var(--bg3);border:1px solid var(--b1);border-radius:8px;padding:10px;font-family:var(--mono);font-size:10px;height:150px;overflow-y:auto;color:var(--mint);margin-top:8px;line-height:1.7}
+.fl{padding:1px 0}.fl.e{color:var(--rose)}.fl.w{color:var(--amber)}.fl.ok{color:var(--mint)}.fl.i{color:var(--t3)}
+/* Steps */
+.step{display:flex;align-items:flex-start;gap:10px;padding:9px;background:var(--bg3);border-radius:8px;margin-bottom:6px;border:1px solid var(--b1)}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--sky2);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;flex-shrink:0}
+.step-b{font-size:11px;color:var(--t2);line-height:1.6}.step-b b{color:var(--t1)}
+/* Buttons */
+.btn{background:var(--sky2);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:.2s;font-family:var(--sans);display:inline-flex;align-items:center;gap:4px}
+.btn:hover{background:var(--sky3)}
+.btn-r{background:rgba(252,129,129,.1);color:var(--rose);border:1px solid rgba(252,129,129,.2);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;font-family:var(--sans)}
+.btn-r:hover{background:rgba(252,129,129,.2)}
+.btn-g{background:rgba(72,187,120,.1);color:var(--mint);border:1px solid rgba(72,187,120,.2);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;font-family:var(--sans)}
+.btn-g:hover{background:rgba(72,187,120,.2)}
+.btn-gh{background:transparent;color:var(--t2);border:1px solid var(--b2);border-radius:7px;padding:5px 12px;font-size:11px;cursor:pointer;transition:.2s;font-family:var(--sans)}
+.btn-gh:hover{border-color:var(--b3);color:var(--t1)}
+/* Progress */
+.pgbg{height:4px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:5px}
+.pgfill{height:100%;background:linear-gradient(90deg,var(--sky2),var(--mint));border-radius:3px;transition:width .3s;width:0%}
+/* Misc */
+.empty{text-align:center;padding:28px;color:var(--t3);font-size:12px}
+.divider{height:1px;background:var(--b1);margin:12px 0}
+.qchip{display:inline-block;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">💨</div>
+    <span class="logo-text">AirSense</span>
+    <span class="logo-ver">v4.1</span>
+  </div>
+  <div class="conn-area">
+    <input class="ip-field" id="ip-in" type="text" placeholder="192.168.x.x" value="">
+    <input class="port-field" id="port-in" type="number" value="81" placeholder="81">
+    <button class="conn-btn" id="conn-btn" onclick="toggleConn()">⚡ Kết nối</button>
+  </div>
+  <div class="spill off" id="spill">
+    <div class="sdot" id="sdot"></div>
+    <span id="spill-lbl">Offline</span>
+  </div>
+</header>
+
+<div class="sbar">
+  <div class="si">📡 ESP32 <b id="sb-ip" class="err">offline</b></div>
+  <div class="si" id="sb-rssi-w" style="display:none">📶 <b id="sb-rssi">--</b></div>
+  <div class="si">📦 Records <b id="sb-rec">0</b></div>
+  <div class="si" id="sb-wu" style="display:none;color:var(--amber)">⏳ MQ warm-up</div>
+  <div class="sr">
+    <div class="si">⚡ Latency <b id="sb-lat">--</b></div>
+    <div class="si">🕐 <b id="sb-time">--</b></div>
+  </div>
+</div>
+
+<nav id="nav">
+  <button class="ntab active" data-tab="dashboard">📊 Dashboard</button>
+  <button class="ntab" data-tab="sensors">🔬 Cảm biến</button>
+  <button class="ntab" data-tab="history">📈 Lịch sử</button>
+  <button class="ntab" data-tab="alerts">🔔 Cảnh báo <span class="nbadge" id="al-badge" style="display:none">0</span></button>
+  <button class="ntab" data-tab="oled">🖥️ OLED</button>
+  <button class="ntab" data-tab="pinout">📌 Pinout</button>
+  <button class="ntab" data-tab="flash">⚡ Flash</button>
+  <button class="ntab" data-tab="settings">⚙️ Cài đặt</button>
+</nav>
+
+<main>
+<!-- ══ DASHBOARD ══ -->
+<div class="tab-page active" id="tab-dashboard">
+  <div class="ob" id="ob-banner">
+    <span style="font-size:18px">🔌</span>
+    <span>Chưa kết nối ESP32 — Nhập địa chỉ IP và nhấn <b>⚡ Kết nối</b>. ESP32 và máy tính phải cùng mạng WiFi.</span>
+  </div>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="aqi-wrap">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(99,179,237,.07)" stroke-width="7"/>
+        <circle cx="45" cy="45" r="38" fill="none" stroke="var(--good)" stroke-width="7" stroke-linecap="round" stroke-dasharray="47 192" stroke-dashoffset="0" opacity=".45"/>
+        <circle cx="45" cy="45" r="38" fill="none" stroke="var(--mod)" stroke-width="7" stroke-linecap="round" stroke-dasharray="47 192" stroke-dashoffset="-47" opacity=".45"/>
+        <circle cx="45" cy="45" r="38" fill="none" stroke="var(--bad)" stroke-width="7" stroke-linecap="round" stroke-dasharray="47 192" stroke-dashoffset="-94" opacity=".45"/>
+        <circle cx="45" cy="45" r="38" fill="none" stroke="var(--dngr)" stroke-width="7" stroke-linecap="round" stroke-dasharray="47 192" stroke-dashoffset="-141" opacity=".45"/>
+        <circle cx="45" cy="45" r="38" fill="none" stroke="var(--rose)" stroke-width="7" stroke-linecap="round" stroke-dasharray="47 192" stroke-dashoffset="-188" opacity=".45"/>
+        <circle id="aqi-arc" cx="45" cy="45" r="38" fill="none" stroke="var(--sky2)" stroke-width="7" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="239" style="transition:stroke-dashoffset .8s,stroke .4s"/>
+      </svg>
+      <div class="aqi-inner"><div class="aqi-num" id="aqi-num">--</div><div class="aqi-lbl">AQI</div></div>
+    </div>
+    <div class="hero-body">
+      <h2 id="aqi-title">Chờ kết nối ESP32...</h2>
+      <p id="aqi-desc">Nhập IP của ESP32 và bấm kết nối. Tất cả cảm biến OFF cho đến khi nhận được dữ liệu thực từ phần cứng.</p>
+      <div class="tag-row" id="aqi-tags"><span class="tag">GP2Y1010</span><span class="tag">MP-135</span><span class="tag">MQ-7</span><span class="tag">DHT22</span><span class="tag">DS3231</span></div>
+      <div class="wu-strip h" id="wu-strip">⏳ MQ sensors warm-up — cần ~3 phút. Còn <b id="wu-s">--</b>s</div>
+    </div>
+    <div class="hclk">
+      <div class="clk-t" id="rtc-t">--:--:--</div>
+      <div class="clk-d" id="rtc-d">--/--/----</div>
+      <div class="clk-s" id="rtc-src">system clock</div>
+    </div>
+  </div>
+  <!-- Sensor cards (ALL start OFF) -->
+  <div class="g5">
+    <div class="sc" id="sc-temp" style="--sc-col:#f6ad55">
+      <div class="sc-line"></div>
+      <div class="sc-top"><span class="sc-name">🌡️ Nhiệt độ</span><span class="stag OFF" id="tag-temp">OFF</span></div>
+      <div class="sc-val" id="val-temp">--</div>
+      <div class="sc-unit">°C · DHT22 · IO4</div>
+      <div class="sc-bar-bg"><div class="sc-bar" id="bar-temp"></div></div>
+      <div class="sc-sts" id="sts-temp">Offline — chờ dữ liệu</div>
+      <div class="sc-hw">pullup 10kΩ → 3.3V</div>
+    </div>
+    <div class="sc" id="sc-humi" style="--sc-col:#4fd1c5">
+      <div class="sc-line"></div>
+      <div class="sc-top"><span class="sc-name">💧 Độ ẩm</span><span class="stag OFF" id="tag-humi">OFF</span></div>
+      <div class="sc-val" id="val-humi">--</div>
+      <div class="sc-unit">% RH · DHT22 · IO4</div>
+      <div class="sc-bar-bg"><div class="sc-bar" id="bar-humi"></div></div>
+      <div class="sc-sts" id="sts-humi">Offline — chờ dữ liệu</div>
+      <div class="sc-hw">chung pin với nhiệt độ</div>
+    </div>
+    <div class="sc" id="sc-dust" style="--sc-col:#b794f4">
+      <div class="sc-line"></div>
+      <div class="sc-top"><span class="sc-name">🌫️ Bụi mịn</span><span class="stag OFF" id="tag-dust">OFF</span></div>
+      <div class="sc-val" id="val-dust">--</div>
+      <div class="sc-unit">mg/m³ · GP2Y1010 · IO35</div>
+      <div class="sc-bar-bg"><div class="sc-bar" id="bar-dust"></div></div>
+      <div class="sc-sts" id="sts-dust">Offline — chờ dữ liệu</div>
+      <div class="sc-hw">LED IO19 · ADC IO35</div>
+    </div>
+    <div class="sc" id="sc-smoke" style="--sc-col:#fc8181">
+      <div class="sc-line"></div>
+      <div class="sc-top"><span class="sc-name">☁️ Smoke MP-135</span><span class="stag OFF" id="tag-smoke">OFF</span></div>
+      <div class="sc-val" id="val-smoke" style="font-size:22px">--</div>
+      <div class="sc-unit">ADC raw · IO34</div>
+      <div class="sc-bar-bg"><div class="sc-bar" id="bar-smoke"></div></div>
+      <div class="sc-sts" id="sts-smoke">Offline — cần warm-up 3min</div>
+      <div class="sc-hw">ADC1_CH6 · 10kΩ load</div>
+    </div>
+    <div class="sc" id="sc-co" style="--sc-col:#68d391">
+      <div class="sc-line"></div>
+      <div class="sc-top"><span class="sc-name">💨 CO MQ-7</span><span class="stag OFF" id="tag-co">OFF</span></div>
+      <div class="sc-val" id="val-co">--</div>
+      <div class="sc-unit">ADC raw · IO33</div>
+      <div class="sc-bar-bg"><div class="sc-bar" id="bar-co"></div></div>
+      <div class="sc-sts" id="sts-co">Offline — cần warm-up 3min</div>
+      <div class="sc-hw">ADC1_CH5 · 10kΩ load</div>
+    </div>
+  </div>
+  <!-- Sys info -->
+  <div class="g6">
+    <div class="sysc"><span class="lbl">RTC Clock</span><span class="val" id="sys-rtc" style="font-size:14px;color:var(--violet)">--:--:--</span><span class="sub" id="sys-date">DS3231 · IO21/22</span></div>
+    <div class="sysc"><span class="lbl">WiFi RSSI</span><span class="val" id="sys-rssi">--</span><span class="sub" id="sys-rssi-q">dBm</span></div>
+    <div class="sysc"><span class="lbl">Uptime</span><span class="val" id="sys-uptime">--</span><span class="sub">giây</span></div>
+    <div class="sysc"><span class="lbl">Free RAM</span><span class="val" id="sys-ram">--</span><span class="sub">KB</span></div>
+    <div class="sysc"><span class="lbl">Model / FW</span><span class="val" id="sys-model" style="font-size:11px">--</span><span class="sub" id="sys-fw">--</span></div>
+    <div class="sysc"><span class="lbl">Cập nhật lúc</span><span class="val" id="sys-upd" style="font-size:13px">--</span><span class="sub" id="sys-lat">--</span></div>
+  </div>
+  <!-- Charts -->
+  <div class="g2">
+    <div class="card">
+      <div class="chart-hd">
+        <span class="chart-title">📊 Realtime</span>
+        <div class="ctabs" id="rt-tabs">
+          <button class="ct active" onclick="setRT('dust',this)">Bụi</button>
+          <button class="ct" onclick="setRT('smoke',this)">Smoke</button>
+          <button class="ct" onclick="setRT('co',this)">CO</button>
+          <button class="ct" onclick="setRT('temp',this)">Nhiệt</button>
+          <button class="ct" onclick="setRT('humi',this)">Ẩm</button>
+        </div>
+      </div>
+      <div style="position:relative;height:170px"><canvas id="rt-canvas"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-hd">
+        <span class="chart-title">🌡️ Nhiệt & Ẩm</span>
+        <span style="font-size:10px;color:var(--t3);font-family:var(--mono)" id="th-pts">0 pts</span>
+      </div>
+      <div style="position:relative;height:170px"><canvas id="th-canvas"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="chart-hd"><span class="chart-title">🌫️ Bụi mịn (mg/m³)</span><span style="font-size:10px;color:var(--t3);font-family:var(--mono)" id="dust-pts">0 pts</span></div>
+      <div style="position:relative;height:140px"><canvas id="dust-canvas"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-hd">
+        <span class="chart-title">☁️ MQ ADC Raw</span>
+        <div class="ctabs" id="mq-tabs">
+          <button class="ct active" onclick="setMQ('smoke',this)">MP-135</button>
+          <button class="ct" onclick="setMQ('co',this)">MQ-7</button>
+        </div>
+      </div>
+      <div style="position:relative;height:140px"><canvas id="mq-canvas"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SENSORS ══ -->
+<div class="tab-page" id="tab-sensors">
+<div class="g3">
+  <div class="dc" id="dc-gp2y">
+    <div class="dc-hd"><span class="dc-title">🌫️ GP2Y1010AU0F — Bụi mịn</span><span class="stag OFF" id="dt-gp2y">Offline</span></div>
+    <div style="font-size:22px;font-weight:700;font-family:var(--mono);margin:6px 0" id="dd-dust">-- mg/m³</div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:6px">Voltage: <b id="dd-dustv" style="color:var(--amber)">--</b> V</div>
+    <div class="sc-bar-bg" style="height:4px"><div class="sc-bar" id="db-dust" style="background:var(--violet)"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t3);margin:2px 0 5px"><span>&lt;0.035 Tốt</span><span>&lt;0.075 TB</span><span>&lt;0.15 Cao</span><span>&gt;0.15 ⚠</span></div>
+    <div class="sc-sts" id="dq-dust" style="color:var(--t3)">Offline</div>
+    <div class="kv">
+      <span class="k">LED pin</span><span class="v"><b>IO19</b> GPIO OUT · 0.28ms pulse</span>
+      <span class="k">ADC</span><span class="v"><b>IO35</b> ADC1_CH7</span>
+      <span class="k">Lọc nguồn</span><span class="v"><b>R=2.2Ω</b> + <b>C=220µF</b> · 5V</span>
+      <span class="k">Offset</span><span class="v">0.9V · sensitivity 0.5V/(mg/m³)</span>
+    </div>
+  </div>
+  <div class="dc" id="dc-mq135">
+    <div class="dc-hd"><span class="dc-title">🧪 MP-135 — Smoke/VOC</span><span class="stag OFF" id="dt-mq135">Offline</span></div>
+    <div style="font-size:22px;font-weight:700;font-family:var(--mono);margin:6px 0" id="dd-smoke">-- ADC</div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:6px">0–4095 ADC raw (12-bit)</div>
+    <div class="sc-sts" id="dq-smoke" style="color:var(--t3)">Offline</div>
+    <div class="kv">
+      <span class="k">ADC</span><span class="v"><b>IO34</b> ADC1_CH6 · R_load 10kΩ</span>
+      <span class="k">Nguồn</span><span class="v"><b>5V</b> · heater ~150mW</span>
+      <span class="k w">Warmup</span><span class="v w">~3 phút gia nhiệt trước khi đọc chính xác</span>
+      <span class="k">Phát hiện</span><span class="v">NH₃, NOₓ, CO₂, cồn, khói</span>
+    </div>
+  </div>
+  <div class="dc" id="dc-mq7">
+    <div class="dc-hd"><span class="dc-title">💨 MQ-7 — CO</span><span class="stag OFF" id="dt-mq7">Offline</span></div>
+    <div style="font-size:22px;font-weight:700;font-family:var(--mono);margin:6px 0" id="dd-co">-- ADC</div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:6px">0–4095 ADC raw · Carbon Monoxide</div>
+    <div class="sc-sts" id="dq-co" style="color:var(--t3)">Offline</div>
+    <div class="kv">
+      <span class="k">ADC</span><span class="v"><b>IO33</b> ADC1_CH5 · R_load 10kΩ</span>
+      <span class="k">Nguồn</span><span class="v"><b>5V</b></span>
+      <span class="k w">Warmup</span><span class="v w">~3 phút gia nhiệt</span>
+      <span class="k">Dải đo</span><span class="v">20~2000 ppm CO</span>
+    </div>
+  </div>
+  <div class="dc" id="dc-dht22">
+    <div class="dc-hd"><span class="dc-title">🌡️ DHT22 — Nhiệt & Ẩm</span><span class="stag OFF" id="dt-dht22">Offline</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+      <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Nhiệt độ</div><div style="font-size:24px;font-weight:700;font-family:var(--mono)" id="dd-temp">--°C</div></div>
+      <div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Độ ẩm</div><div style="font-size:24px;font-weight:700;font-family:var(--mono)" id="dd-humi">--%</div></div>
+    </div>
+    <div class="kv">
+      <span class="k">GPIO</span><span class="v"><b>IO4</b> · pullup 10kΩ → 3.3V</span>
+      <span class="k">Nguồn</span><span class="v"><b>3.3V</b></span>
+      <span class="k">Độ chính xác</span><span class="v">±0.5°C · ±2%RH · mỗi 2s</span>
+    </div>
+  </div>
+  <div class="dc" id="dc-rtc">
+    <div class="dc-hd"><span class="dc-title">🕐 DS3231 — RTC</span><span class="stag OFF" id="dt-rtc">Offline</span></div>
+    <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--violet);margin:5px 0" id="dd-rtc">--:--:--</div>
+    <div style="font-family:var(--mono);font-size:12px;color:var(--t2)" id="dd-date">--/--/----</div>
+    <div style="font-size:11px;color:var(--t2);margin-top:5px">Module temp: <b id="dd-rtctemp" style="color:var(--sky)">--</b>°C</div>
+    <div class="kv">
+      <span class="k">SDA</span><span class="v"><b>IO21</b></span>
+      <span class="k">SCL</span><span class="v"><b>IO22</b></span>
+      <span class="k">I2C addr</span><span class="v">0x68 · backup CR2032</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ HISTORY ══ -->
+<div class="tab-page" id="tab-history">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px">Lịch sử</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--t2)" id="hist-cnt">0 bản ghi</span>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <select id="hist-filter" onchange="loadHist()" style="width:auto"><option value="all">Tất cả</option><option value="good">Tốt</option><option value="moderate">Trung bình</option><option value="unhealthy">Không lành</option><option value="danger">Nguy hiểm</option></select>
+      <button class="btn-gh" onclick="window.location.href='/api/export/csv'">⬇ CSV</button>
+      <button class="btn-gh" onclick="loadHist()">🔄 Tải lại</button>
+      <button class="btn-r" onclick="clearHist()">🗑 Xóa</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chart-hd">
+      <span class="chart-title">📈 Biểu đồ lịch sử</span>
+      <div class="ctabs" id="hs-tabs">
+        <button class="ct active" onclick="setHS('dust',this)">Bụi</button>
+        <button class="ct" onclick="setHS('smoke',this)">Smoke</button>
+        <button class="ct" onclick="setHS('co',this)">CO</button>
+        <button class="ct" onclick="setHS('temp',this)">Nhiệt</button>
+        <button class="ct" onclick="setHS('humi',this)">Ẩm</button>
+      </div>
+    </div>
+    <div style="position:relative;height:150px"><canvas id="hist-canvas"></canvas></div>
+  </div>
+  <div class="card"><div class="tbl"><table>
+    <thead><tr><th>Thời gian</th><th>Nhiệt(°C)</th><th>Ẩm(%)</th><th>Bụi(mg/m³)</th><th>Smoke(ADC)</th><th>CO(ADC)</th><th>Đánh giá</th></tr></thead>
+    <tbody id="hist-body"><tr><td colspan="7" class="empty">Chưa có dữ liệu — kết nối ESP32 để bắt đầu ghi</td></tr></tbody>
+  </table></div></div>
+</div>
+
+<!-- ══ ALERTS ══ -->
+<div class="tab-page" id="tab-alerts">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px">Nhật ký cảnh báo</span>
+    <button class="btn-r" onclick="clearAlerts()">🗑 Xóa tất cả</button>
+  </div>
+  <div id="alert-list"><div class="empty">Không có cảnh báo nào ✅</div></div>
+  <div class="sg" style="margin-top:14px">
+    <div class="sg-hd">⚙️ Ngưỡng cảnh báo</div>
+    <div class="sr2"><div><div class="sr2-lbl">Bụi GP2Y1010</div><div class="sr2-sub">mg/m³ · WHO ~0.075</div></div><div style="display:flex;align-items:center;gap:6px"><input type="number" id="thr-dust" value="0.075" step="0.005" style="width:75px"><span style="font-size:10px;color:var(--t2)">mg/m³</span></div></div>
+    <div class="sr2"><div><div class="sr2-lbl">Smoke MP-135</div><div class="sr2-sub">ADC raw</div></div><div style="display:flex;align-items:center;gap:6px"><input type="number" id="thr-smoke" value="2000" style="width:75px"><span style="font-size:10px;color:var(--t2)">ADC</span></div></div>
+    <div class="sr2"><div><div class="sr2-lbl">CO MQ-7</div><div class="sr2-sub">ADC raw</div></div><div style="display:flex;align-items:center;gap:6px"><input type="number" id="thr-co" value="1500" style="width:75px"><span style="font-size:10px;color:var(--t2)">ADC</span></div></div>
+    <div class="sr2"><div><div class="sr2-lbl">Nhiệt độ</div></div><div style="display:flex;align-items:center;gap:6px"><input type="number" id="thr-temp" value="38" style="width:75px"><span style="font-size:10px;color:var(--t2)">°C</span></div></div>
+  </div>
+</div>
+
+<!-- ══ OLED ══ -->
+<div class="tab-page" id="tab-oled">
+<div class="g2">
+  <div class="card">
+    <div class="card-hd">Preview OLED 128×64 SSD1306</div>
+    <div style="display:flex;justify-content:center;padding:16px 0">
+      <div style="background:#111;padding:8px;border-radius:8px;border:2px solid #1a1a1a;box-shadow:0 0 30px rgba(0,0,0,.8)">
+        <div class="oled" style="width:256px;height:64px;transform:scale(1.8);transform-origin:top left;margin-right:205px;margin-bottom:51px" id="oled-display">
+          <div class="oled-ln sep"><b>AirSense v4.1</b><span id="ob-t">--:--:--</span></div>
+          <div class="oled-ln"><span>T:<span id="ob-temp">--</span>C</span><span>H:<span id="ob-humi">--</span>%</span></div>
+          <div class="oled-ln"><span>Dust:</span><span id="ob-dust">-- mg</span></div>
+          <div class="oled-ln"><span>Sk:<span id="ob-smoke">----</span></span><span>CO:<span id="ob-co">----</span></span></div>
+          <div class="oled-ln"><span id="ob-rssi">RSSI:--</span><span id="ob-warm"></span></div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:9px;color:var(--t3);text-align:center;margin-top:10px">SSD1306 · I2C 0x3C · SDA=IO21 · SCL=IO22</p>
+  </div>
+  <div class="card">
+    <div class="card-hd">Điều khiển OLED</div>
+    <div class="sr2"><div class="sr2-lbl">Độ sáng</div><div style="display:flex;align-items:center;gap:8px"><input type="range" id="oled-brt" min="0" max="255" value="200" style="width:90px" oninput="$('brt-v').textContent=this.value"><span id="brt-v" style="font-family:var(--mono);font-size:11px;min-width:24px">200</span></div></div>
+    <div class="sr2"><div class="sr2-lbl">Xoay 180°</div><div class="tog" id="tog-flip" onclick="this.classList.toggle('on')"></div></div>
+    <div class="sr2"><div class="sr2-lbl">Chế độ hiển thị</div><select id="oled-mode" style="width:auto"><option value="all">Tất cả sensor</option><option value="dust">Bụi + CO</option><option value="weather">Nhiệt + Ẩm</option><option value="clock">Đồng hồ</option></select></div>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="sendOLED()">📤 Gửi ESP32</button>
+      <button class="btn-g" onclick="sendCmd({cmd:'oled_on'})">💡 Bật</button>
+      <button class="btn-gh" onclick="sendCmd({cmd:'oled_off'})">🌙 Tắt</button>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-top:8px">* Cần ESP32 đang kết nối</div>
+  </div>
+</div>
+</div>
+
+<!-- ══ PINOUT ══ -->
+<div class="tab-page" id="tab-pinout">
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-hd">📌 Sơ đồ chân ESP32-DEVKITC — EasyEDA v1.0</div>
+    <div class="tbl"><table class="pin-t">
+      <thead><tr><th>GPIO</th><th>Kết nối</th><th>Loại</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>IO4</td><td>DHT22 Data</td><td><span class="pt gpio">GPIO</span></td><td>Pull-up 10kΩ → 3.3V</td></tr>
+        <tr><td>IO19</td><td>GP2Y1010 LED pin</td><td><span class="pt gpio">GPIO OUT</span></td><td>0.28ms pulse, active LOW · U5</td></tr>
+        <tr><td>IO21 (SDA)</td><td>DS3231 SDA + OLED SDA</td><td><span class="pt i2c">I2C</span></td><td>pull-up 4.7kΩ → 3.3V</td></tr>
+        <tr><td>IO22 (SCL)</td><td>DS3231 SCL + OLED SCL</td><td><span class="pt i2c">I2C</span></td><td>DS3231=0x68 · OLED=0x3C</td></tr>
+        <tr><td>IO33</td><td>MQ-7 AOUT</td><td><span class="pt adc">ADC1_CH5</span></td><td>R_load 10kΩ → GND · U4</td></tr>
+        <tr><td>IO34</td><td>MP-135 AOUT</td><td><span class="pt adc">ADC1_CH6</span></td><td>R_load 10kΩ → GND · U3</td></tr>
+        <tr><td>IO35</td><td>GP2Y1010 AOUT</td><td><span class="pt adc">ADC1_CH7</span></td><td>Đọc sau 0.28ms từ LED on</td></tr>
+        <tr><td>3.3V</td><td>DHT22 · DS3231 · OLED</td><td><span class="pt pwr">PWR</span></td><td>Max ~500mA LDO onboard</td></tr>
+        <tr><td>5V</td><td>GP2Y · MP-135 · MQ-7</td><td><span class="pt pwr">PWR</span></td><td>USB / nguồn ngoài</td></tr>
+        <tr><td>GND</td><td>Tất cả GND</td><td><span class="pt pwr">GND</span></td><td>Mass chung</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd">⚡ Mạch lọc GP2Y1010</div>
+      <div class="code">ESP32 IO19 ──── LED(3) GP2Y1010
+ESP32 IO35 ──── V-LED(5)
+
+5V ─── R(2.2Ω) ──┬── VCC(1)
+                 │
+               C(220µF)
+                 │
+                GND(2,4,6)
+
+Timing:
+ t=0ms    : IO19=LOW  (LED bật)
+ t=0.28ms : Đọc ADC IO35
+ t=0.32ms : IO19=HIGH (LED tắt)
+ t=10ms   : Lặp lại
+
+Tính bụi:
+ voltage = raw × (3.3/4095)
+ dust = max(0, (V - 0.9) / 0.5)</div>
+    </div>
+    <div class="card">
+      <div class="card-hd">📡 JSON Format ESP32 → Server</div>
+      <div class="code" style="font-size:9px">{
+  "temp":   28.5,    // DHT22 °C
+  "humi":   65.0,    // DHT22 %RH
+  "smoke":  1245,    // MP-135 ADC raw
+  "co":     980,     // MQ-7 ADC raw
+  "dust":   0.042,   // GP2Y mg/m³
+  "dust_v": 1.51,    // GP2Y voltage V
+  "rtc":    "14:32:05",
+  "date":   "11/04/2026",
+  "rtctemp":28.0,    // DS3231 module temp
+  "lat":    10.7769, // GPS latitude
+  "lng":    106.7009,// GPS longitude
+  "alt":    12.0,    // m
+  "spd":    0.0,     // km/h
+  "sats":   8,       // satellites
+  "fix":    3,       // 0=none,2=2D,3=3D
+  "rssi":  -65,      // WiFi dBm
+  "warmup": false,   // MQ warm-up status
+  "model": "ESP32-DEVKITC",
+  "fw":    "4.1",
+  "uptime": 3600,    // seconds
+  "ram":    245760   // bytes free
+}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FLASH ══ -->
+<div class="tab-page" id="tab-flash">
+  <div class="sg">
+    <div class="sg-hd">⚡ Flash Firmware qua Web Serial API<span style="background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);color:var(--sky);border-radius:5px;padding:2px 9px;font-size:10px;text-transform:none">Chrome / Edge only</span></div>
+    <p style="font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:14px">Nạp firmware .bin trực tiếp qua USB — không cần Arduino IDE hoặc esptool.</p>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn" id="btn-flash" onclick="flashESP32()">⚡ Chọn .bin & Flash</button>
+      <button class="btn-gh" onclick="eraseFlash()">🗑 Erase Flash</button>
+      <div id="flash-prog" style="display:none;flex:1;min-width:120px">
+        <div style="font-size:10px;color:var(--t2);margin-bottom:3px" id="flash-st">...</div>
+        <div class="pgbg"><div class="pgfill" id="flash-pg"></div></div>
+      </div>
+    </div>
+    <div class="fl-box" id="flash-log"><div class="fl i">Sẵn sàng. Kết nối ESP32 qua USB và nhấn Flash...</div></div>
+  </div>
+  <div class="sg">
+    <div class="sg-hd">📋 Hướng dẫn</div>
+    <div class="step"><div class="step-n">1</div><div class="step-b"><b>Build firmware</b>: Arduino IDE → Sketch → Export Compiled Binary → lấy file .bin</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-b"><b>Sửa WiFi</b>: thay <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">WIFI_SSID</code> và <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">WIFI_PASS</code></div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-b"><b>Kết nối USB</b>: cài driver CP2102/CH340. Dùng Chrome hoặc Edge</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-b"><b>Nhấn ⚡ Flash</b>, chọn cổng COM, chọn file .bin → đợi ~30–60s</div></div>
+    <div class="divider"></div>
+    <p style="font-size:11px;color:var(--t3)">Thay thế: <a href="https://espressif.github.io/esptool-js/" target="_blank" style="color:var(--sky)">esptool-js online</a> · <a href="https://www.espressif.com/en/support/download/other-tools" target="_blank" style="color:var(--sky)">Flash Download Tool</a></p>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div class="tab-page" id="tab-settings">
+<div class="g2">
+  <div>
+    <div class="sg">
+      <div class="sg-hd">🔌 Kết nối ESP32</div>
+      <div class="sr2"><div><div class="sr2-lbl">IP Address</div><div class="sr2-sub">Xem Serial Monitor 115200 baud</div></div><input type="text" id="cfg-ip" value="192.168.1.100" style="width:145px"></div>
+      <div class="sr2"><div><div class="sr2-lbl">WebSocket Port</div><div class="sr2-sub">Mặc định: 81</div></div><input type="number" id="cfg-port" value="81" style="width:60px"></div>
+      <div style="margin-top:12px;display:flex;gap:6px"><button class="btn" onclick="connFromSettings()">💾 Lưu & Kết nối</button><button class="btn-gh" onclick="disconnect()">🔌 Ngắt</button></div>
+      <div style="background:var(--bg3);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;color:var(--t2);line-height:1.8">
+        📡 ESP32 và máy tính phải <b style="color:var(--t1)">cùng mạng WiFi</b><br>
+        IP hiển thị trên <b style="color:var(--sky)">Serial Monitor</b> hoặc <b style="color:var(--sky)">màn hình OLED</b>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-hd">📟 Thông tin thiết bị</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+        <div><span style="color:var(--t3)">Model: </span><span id="i-model" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">FW: </span><span id="i-fw" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">MAC: </span><span id="i-mac" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">SSID: </span><span id="i-ssid" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">Uptime: </span><span id="i-uptime" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">RAM: </span><span id="i-ram" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">RSSI: </span><span id="i-rssi" style="font-family:var(--mono)">--</span></div>
+        <div><span style="color:var(--t3)">MQ: </span><span id="i-mq" style="font-family:var(--mono)">--</span></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="sg">
+      <div class="sg-hd">🔧 Debug Console</div>
+      <div class="fl-box" id="console-log" style="height:130px"><div class="fl i">Console ready...</div></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn-gh" onclick="clearConsole()">Xóa</button>
+        <button class="btn-gh" onclick="pingESP()">Ping ESP32</button>
+        <input type="text" id="manual-cmd" value='{"cmd":"ping"}' style="flex:1;min-width:100px">
+        <button class="btn-gh" onclick="sendManual()">Gửi</button>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-hd">🔔 Tuỳ chọn</div>
+      <div class="sr2"><div class="sr2-lbl">Auto-reconnect</div><div class="tog on" id="tog-auto" onclick="this.classList.toggle('on')"></div></div>
+      <div class="sr2"><div class="sr2-lbl">Sound alerts</div><div class="tog" id="tog-sound" onclick="this.classList.toggle('on')"></div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let ws=null,wsOK=false,reconnTmr=null,pingTs=null;
+const MAX_RT=80;
+let rtLabels=[],rtBuf={dust:[],smoke:[],co:[],temp:[],humi:[]};
+let thL=[],thT=[],thH=[],dL=[],dD=[],mqL=[],mqB=[];
+let rtSen='dust',mqSen='smoke',hsSen='dust';
+let histData=[],alerts=[],alertCnt=0;
+let rtChart,thChart,dustChart,mqChart,histChart;
+const COL={dust:'#b794f4',smoke:'#fc8181',co:'#68d391',temp:'#f6ad55',humi:'#4fd1c5'};
+const lastAl={};
+
+// ══════════════════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════════════════
+function toggleConn(){wsOK?disconnect():connect()}
+
+function connect(){
+  const ip=$('ip-in').value.trim(),port=$('port-in').value.trim()||'81';
+  if(!ip){alert('Nhập địa chỉ IP ESP32');return}
+  if(ws){try{ws.close()}catch(e){}ws=null}
+  setStatus('cng');clog('i','Kết nối ws://'+ip+':'+port+'...');
+  try{
+    ws=new WebSocket('ws://'+ip+':'+port);
+    ws.onopen=()=>{
+      wsOK=true;setStatus('on');pingTs=Date.now();
+      clog('ok','✓ Kết nối thành công');
+      addAlert('ok','✅ Kết nối ESP32 thành công',now());
+      try{fetchHistory()}catch(e){}
+    };
+    ws.onmessage=e=>{
+      const lat=pingTs?Date.now()-pingTs:null;pingTs=Date.now();
+      if(lat!==null){setText('sb-lat',lat+'ms');setText('sys-lat','Latency: '+lat+'ms')}
+      try{
+        const d=JSON.parse(e.data);
+        if(d.type==='sensor_data'){onSD(d.data);return}
+        if(d.type==='init'){onInit(d);return}
+        if(d.type==='esp32_status'){onE32S(d);return}
+        if(d.type==='history_data'){histData=d.data||[];setText('hist-cnt',(d.total||histData.length)+' bản ghi');setText('sb-rec',d.total||histData.length);renderHistTbl();renderHC();return}
+        if(d.type==='history_add'){histData.push(d.entry);setText('hist-cnt',histData.length+' bản ghi');return}
+        if(d.type==='history_cleared'){histData=[];renderHistTbl();renderHC();return}
+        if(d.type==='alert'){addAlert(d.alert.type,d.alert.msg,d.alert.time);return}
+        // Direct ESP32 JSON
+        if(d.temp!==undefined||d.smoke!==undefined||d.dust!==undefined)onSD(d);
+      }catch(err){clog('e','Parse: '+err.message)}
+    };
+    ws.onclose=()=>{
+      wsOK=false;setStatus('off');resetSensors();
+      clog('w','Mất kết nối');
+      addAlert('d','❌ Mất kết nối ESP32',now());
+      if($('tog-auto').classList.contains('on')){clog('i','Tự kết nối lại sau 4s...');reconnTmr=setTimeout(connect,4000)}
+    };
+    ws.onerror=()=>{wsOK=false;setStatus('off');clog('e','WebSocket lỗi')}
+  }catch(e){setStatus('off');clog('e','Lỗi: '+e.message)}
+}
+
+function disconnect(){
+  if(reconnTmr){clearTimeout(reconnTmr);reconnTmr=null}
+  if(ws){try{ws.close()}catch(e){}ws=null}
+  wsOK=false;setStatus('off');resetSensors();clog('i','Đã ngắt kết nối')
+}
+
+function sendWS(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));else clog('e','Chưa kết nối')}
+function sendCmd(o){sendWS({cmd:'esp32_cmd',payload:o})}
+
+function onInit(d){
+  setText('sb-rec',d.records||0);
+  if(d.latestData)onSD(d.latestData);
+  if(d.alerts)d.alerts.forEach(a=>addAlert(a.type,a.msg,a.time));
+  clog('ok','Server init · '+(d.records||0)+' records')
+}
+function onE32S(d){
+  if(d.connected)clog('ok','ESP32 kết nối: '+d.ip+':'+d.port);
+  else{clog('w','ESP32 ngắt kết nối');resetSensors()}
+}
+
+// ══════════════════════════════════════════════
+// SENSOR DATA
+// ══════════════════════════════════════════════
+function onSD(d){
+  const t=d.rtc||now();
+  // Temp
+  if(d.temp!=null&&!isNaN(d.temp)){const q=qTemp(d.temp);updSC('temp',d.temp.toFixed(1),true,d.temp,0,50,q);setText('dd-temp',d.temp.toFixed(1)+'°C');setText('ob-temp',d.temp.toFixed(1))}
+  else offSC('temp');
+  // Humi
+  if(d.humi!=null&&!isNaN(d.humi)){const q=qHumi(d.humi);updSC('humi',d.humi.toFixed(0),true,d.humi,0,100,q);setText('dd-humi',d.humi.toFixed(0)+'%');setText('ob-humi',d.humi.toFixed(0));updateDC('dht22',true,(d.humi>=40&&d.humi<=70)?'online':'warn')}
+  else{offSC('humi');updateDC('dht22',false,'')}
+  // Dust
+  if(d.dust!=null&&!isNaN(d.dust)){
+    const q=qDust(d.dust);updSC('dust',d.dust.toFixed(3),true,d.dust,0,0.5,q);
+    setText('dd-dust',d.dust.toFixed(3)+' mg/m³');if(d.dust_v!=null)setText('dd-dustv',d.dust_v.toFixed(3));
+    setBar('db-dust',d.dust,0.5,q.col);setText('dq-dust',q.label);$('dq-dust').style.color=q.col;
+    updateDC('gp2y',true,q.lvl==='ok'?'online':q.lvl==='warn'?'warn':'danger');
+    setText('ob-dust',d.dust.toFixed(3)+' mg');
+    updateAQI(d.dust);
+  }else{offSC('dust');updateDC('gp2y',false,'')}
+  // Smoke
+  if(d.smoke!=null&&!isNaN(d.smoke)){
+    const q=qSmoke(d.smoke);updSC('smoke',String(d.smoke),true,d.smoke,0,4095,q);
+    setText('dd-smoke',d.smoke+' ADC');setText('dq-smoke',q.label);$('dq-smoke').style.color=q.col;
+    updateDC('mq135',true,q.lvl==='ok'?'online':q.lvl==='warn'?'warn':'danger');
+    setText('ob-smoke',String(d.smoke).padStart(4,'0'));
+  }else{offSC('smoke');updateDC('mq135',false,'')}
+  // CO
+  if(d.co!=null&&!isNaN(d.co)){
+    const q=qCO(d.co);updSC('co',String(d.co),true,d.co,0,4095,q);
+    setText('dd-co',d.co+' ADC');setText('dq-co',q.label);$('dq-co').style.color=q.col;
+    updateDC('mq7',true,q.lvl==='ok'?'online':q.lvl==='warn'?'warn':'danger');
+    setText('ob-co',String(d.co).padStart(4,'0'));
+  }else{offSC('co');updateDC('mq7',false,'')}
+  // RTC
+  if(d.rtc){setText('rtc-t',d.rtc);setText('sys-rtc',d.rtc);setText('dd-rtc',d.rtc);setText('ob-t',d.rtc);setText('rtc-src','DS3231 RTC');updateDC('rtc',true,'online')}
+  if(d.date){setText('rtc-d',d.date);setText('dd-date',d.date);setText('sys-date',d.date)}
+  if(d.rtctemp!=null)setText('dd-rtctemp',(+d.rtctemp).toFixed(1));
+  // System
+  if(d.rssi!=null){setText('sb-rssi',d.rssi+' dBm');$('sb-rssi-w').style.display='';setText('sys-rssi',d.rssi);setText('sys-rssi-q','dBm — '+(d.rssi>-60?'Tốt':d.rssi>-75?'TB':'Yếu'));setText('i-rssi',d.rssi+' dBm');setText('ob-rssi','RSSI:'+d.rssi)}
+  if(d.uptime!=null){setText('sys-uptime',d.uptime);setText('i-uptime',fmtUp(d.uptime))}
+  if(d.ram!=null){const kb=(d.ram/1024).toFixed(1);setText('sys-ram',kb);setText('i-ram',kb+' KB')}
+  if(d.model){setText('sys-model',d.model);setText('i-model',d.model)}
+  if(d.fw){setText('sys-fw','FW '+d.fw);setText('i-fw','v'+d.fw)}
+  if(d.ssid)setText('i-ssid',d.ssid);
+  if(d.mac)setText('i-mac',d.mac);
+  setText('sys-upd',now());setText('sb-time',t);
+  // Warmup
+  const wu=d.warmup===true;
+  $('sb-wu').style.display=wu?'':'none';
+  wu?$('wu-strip').classList.remove('h'):$('wu-strip').classList.add('h');
+  setText('i-mq',wu?'⏳ Warm-up':'✅ Ready');setText('ob-warm',wu?'WARM':'');
+  // RT charts
+  rtLabels.push(t);['dust','smoke','co','temp','humi'].forEach(k=>{rtBuf[k].push(d[k]!=null?+d[k]:null);if(rtBuf[k].length>MAX_RT)rtBuf[k].shift()});
+  if(rtLabels.length>MAX_RT)rtLabels.shift();
+  updRTChart();
+  // TH chart
+  if(d.temp!=null||d.humi!=null){thL.push(t);thT.push(d.temp);thH.push(d.humi);if(thL.length>MAX_RT){thL.shift();thT.shift();thH.shift()}updTHChart();setText('th-pts',thL.length+' pts')}
+  // Dust chart
+  if(d.dust!=null){dL.push(t);dD.push(d.dust);if(dL.length>MAX_RT){dL.shift();dD.shift()}updDustChart();setText('dust-pts',dL.length+' pts')}
+  // MQ chart
+  const mv=mqSen==='smoke'?d.smoke:d.co;
+  if(mv!=null){mqL.push(t);mqB.push(mv);if(mqL.length>MAX_RT){mqL.shift();mqB.shift()}updMQChart()}
+  // Thresholds
+  checkThr(d,t);
+}
+
+// ══════════════════════════════════════════════
+// SENSOR CARD HELPERS
+// ══════════════════════════════════════════════
+function updSC(key,valStr,live,raw,min,max,q){
+  const card=$('sc-'+key),tag=$('tag-'+key),sts=$('sts-'+key),bar=$('bar-'+key),val=$('val-'+key);
+  if(!card)return;
+  card.classList.add('live');
+  if(val)val.textContent=valStr;
+  const pct=Math.max(0,Math.min(100,((raw-min)/(max-min))*100));
+  if(bar){bar.style.width=pct+'%';bar.style.background=q.col}
+  if(tag){const lvl=q.lvl;tag.className='stag '+(lvl==='ok'?'ON':lvl==='warn'?'WARN':'ERR');tag.textContent=lvl==='ok'?'ON':lvl==='warn'?'WARN':'DANGER'}
+  if(sts){sts.style.color=q.col;sts.textContent=q.label}
+}
+function offSC(key){
+  const card=$('sc-'+key),tag=$('tag-'+key),sts=$('sts-'+key),bar=$('bar-'+key),val=$('val-'+key);
+  if(card)card.classList.remove('live');
+  if(val)val.textContent='--';
+  if(bar){bar.style.width='0%'}
+  if(tag){tag.className='stag OFF';tag.textContent='OFF'}
+  if(sts){sts.style.color='var(--t3)';sts.textContent='Offline — chờ dữ liệu'}
+}
+function resetSensors(){
+  ['temp','humi','dust','smoke','co'].forEach(k=>offSC(k));
+  ['gp2y','mq135','mq7','dht22','rtc'].forEach(n=>updateDC(n,false,''));
+}
+function updateDC(name,live,lvl){
+  const dc=$('dc-'+name),dt=$('dt-'+name);
+  if(dc){dc.className='dc'+(live?' '+lvl:'')}
+  if(dt){
+    if(!live){dt.className='stag OFF';dt.textContent='Offline'}
+    else if(lvl==='danger'){dt.className='stag ERR';dt.textContent='DANGER'}
+    else if(lvl==='warn'){dt.className='stag WARN';dt.textContent='WARN'}
+    else{dt.className='stag ON';dt.textContent='Online'}
+  }
+}
+function setBar(id,val,max,col){const e=$(id);if(e){e.style.width=Math.max(0,Math.min(100,(val/max)*100))+'%';e.style.background=col}}
+
+// ══════════════════════════════════════════════
+// QUALITY FUNCTIONS
+// ══════════════════════════════════════════════
+function qDust(v){
+  if(v<0.035)return{label:'Sạch — tốt',lvl:'ok',col:'var(--good)'};
+  if(v<0.075)return{label:'Trung bình',lvl:'warn',col:'var(--mod)'};
+  if(v<0.15) return{label:'Không lành mạnh',lvl:'warn',col:'var(--bad)'};
+  return{label:'⚠ Nguy hiểm!',lvl:'danger',col:'var(--dngr)'};
+}
+function qTemp(v){
+  if(v<10) return{label:'Lạnh nhiều',lvl:'warn',col:'var(--sky)'};
+  if(v<=28)return{label:'Thoải mái',lvl:'ok',col:'var(--good)'};
+  if(v<=36)return{label:'Nóng',lvl:'warn',col:'var(--mod)'};
+  return{label:'Rất nóng!',lvl:'danger',col:'var(--dngr)'};
+}
+function qHumi(v){
+  if(v>=40&&v<=70)return{label:'Lý tưởng',lvl:'ok',col:'var(--good)'};
+  if(v<20||v>85) return{label:'Khó chịu',lvl:'warn',col:'var(--bad)'};
+  return{label:'Chấp nhận được',lvl:'warn',col:'var(--mod)'};
+}
+function qSmoke(v){
+  if(v<1000)return{label:'Bình thường',lvl:'ok',col:'var(--good)'};
+  if(v<2000)return{label:'Có khói nhẹ',lvl:'warn',col:'var(--mod)'};
+  if(v<3000)return{label:'Khói nhiều',lvl:'warn',col:'var(--bad)'};
+  return{label:'⚠ Ô nhiễm nặng!',lvl:'danger',col:'var(--dngr)'};
+}
+function qCO(v){
+  if(v<800) return{label:'An toàn',lvl:'ok',col:'var(--good)'};
+  if(v<1500)return{label:'Chú ý',lvl:'warn',col:'var(--mod)'};
+  if(v<2500)return{label:'Cao',lvl:'warn',col:'var(--bad)'};
+  return{label:'⚠ Nguy hiểm!',lvl:'danger',col:'var(--dngr)'};
+}
+
+// ══════════════════════════════════════════════
+// AQI
+// ══════════════════════════════════════════════
+function updateAQI(dust){
+  const pm=dust*1000;
+  let aqi=Math.min(Math.round(pm*4),500);
+  const bp=[[0,12,0,50],[12.1,35.4,51,100],[35.5,55.4,101,150],[55.5,150.4,151,200],[150.5,250.4,201,300]];
+  for(const[lo,hi,il,ih]of bp)if(pm>=lo&&pm<=hi){aqi=Math.round(((ih-il)/(hi-lo))*(pm-lo)+il);break}
+  setText('aqi-num',aqi);
+  const arc=$('aqi-arc');
+  if(arc)arc.style.strokeDashoffset=239-(239*Math.min(aqi/300,1));
+  let col,title,desc;
+  if(aqi<=50){col='var(--good)';title='Không khí tốt ✓';desc='An toàn cho mọi hoạt động ngoài trời.'}
+  else if(aqi<=100){col='var(--mod)';title='Chất lượng trung bình';desc='Người nhạy cảm nên hạn chế hoạt động dài ngoài trời.'}
+  else if(aqi<=150){col='var(--bad)';title='Không lành mạnh';desc='Trẻ em và người già nên hạn chế hoạt động ngoài.'}
+  else if(aqi<=200){col='var(--dngr)';title='⚠ Không lành mạnh nghiêm trọng';desc='Tất cả mọi người nên hạn chế hoạt động ngoài.'}
+  else{col='var(--rose)';title='🚨 Rất nguy hiểm!';desc='Ở trong nhà, đóng cửa sổ ngay lập tức!'}
+  if(arc)arc.style.stroke=col;$('aqi-num').style.color=col;
+  setText('aqi-title',title);setText('aqi-desc',desc);
+  $('aqi-tags').innerHTML='<span class="tag g">AQI '+aqi+'</span><span class="tag">PM ~'+pm.toFixed(1)+'µg/m³</span><span class="tag '+(aqi<=50?'g':aqi<=100?'a':'r')+'">'+title+'</span>';
+}
+
+// ══════════════════════════════════════════════
+// THRESHOLDS
+// ══════════════════════════════════════════════
+function checkThr(d,t){
+  const checks=[
+    {k:'dust',c:d.dust!=null&&d.dust>+$('thr-dust').value,m:'⚠ Bụi GP2Y vượt ngưỡng: '+(d.dust||0).toFixed(3)+' mg/m³',tp:'d'},
+    {k:'smoke',c:d.smoke!=null&&d.smoke>+$('thr-smoke').value,m:'⚠ Smoke MP-135: '+d.smoke+' ADC',tp:'w'},
+    {k:'co',c:d.co!=null&&d.co>+$('thr-co').value,m:'⚠ CO MQ-7: '+d.co+' ADC',tp:'d'},
+    {k:'temp',c:d.temp!=null&&d.temp>+$('thr-temp').value,m:'🌡️ Nhiệt độ cao: '+(d.temp||0).toFixed(1)+'°C',tp:'w'},
+  ];
+  checks.forEach(c=>{
+    if(c.c&&!lastAl[c.k]){lastAl[c.k]=true;addAlert(c.tp,c.m,t)}
+    else if(!c.c)lastAl[c.k]=false;
+  });
+}
+
+// ══════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════
+const COPTS={responsive:true,maintainAspectRatio:false,animation:{duration:0},
+  plugins:{legend:{labels:{color:'#4a5568',font:{size:10,family:'JetBrains Mono'},boxWidth:10}}},
+  scales:{x:{ticks:{color:'#4a5568',maxTicksLimit:7,font:{size:9,family:'JetBrains Mono'}},grid:{color:'rgba(99,179,237,.04)'}},
+          y:{ticks:{color:'#4a5568',font:{size:9,family:'JetBrains Mono'}},grid:{color:'rgba(99,179,237,.05)'}}}};
+function mkDS(col,label){return{label,data:[],borderColor:col,backgroundColor:col+'18',borderWidth:1.5,pointRadius:0,tension:.35,fill:true}}
+
+function initCharts(){
+  rtChart=new Chart($('rt-canvas'),{type:'line',data:{labels:[],datasets:[mkDS(COL.dust,'Bụi')]},options:{...COPTS,plugins:{legend:{display:false}}}});
+  thChart=new Chart($('th-canvas'),{type:'line',data:{labels:[],datasets:[mkDS('#f6ad55','Nhiệt °C'),mkDS('#4fd1c5','Ẩm %')]},options:COPTS});
+  dustChart=new Chart($('dust-canvas'),{type:'line',data:{labels:[],datasets:[mkDS('#b794f4','Bụi mg/m³')]},options:{...COPTS,plugins:{legend:{display:false}}}});
+  mqChart=new Chart($('mq-canvas'),{type:'line',data:{labels:[],datasets:[mkDS('#fc8181','MP-135 ADC')]},options:{...COPTS,plugins:{legend:{display:false}}}});
+  histChart=new Chart($('hist-canvas'),{type:'line',data:{labels:[],datasets:[mkDS(COL.dust,'Bụi')]},options:{...COPTS,plugins:{legend:{display:false}}}});
+}
+function updRTChart(){if(!rtChart)return;rtChart.data.labels=[...rtLabels];rtChart.data.datasets[0].data=[...rtBuf[rtSen]];rtChart.data.datasets[0].borderColor=COL[rtSen];rtChart.data.datasets[0].backgroundColor=COL[rtSen]+'18';rtChart.update('none')}
+function updTHChart(){if(!thChart)return;thChart.data.labels=[...thL];thChart.data.datasets[0].data=[...thT];thChart.data.datasets[1].data=[...thH];thChart.update('none')}
+function updDustChart(){if(!dustChart)return;dustChart.data.labels=[...dL];dustChart.data.datasets[0].data=[...dD];dustChart.update('none')}
+function updMQChart(){if(!mqChart)return;mqChart.data.labels=[...mqL];mqChart.data.datasets[0].data=[...mqB];mqChart.data.datasets[0].borderColor=COL[mqSen];mqChart.data.datasets[0].backgroundColor=COL[mqSen]+'18';mqChart.update('none')}
+function setRT(s,btn){rtSen=s;document.querySelectorAll('#rt-tabs .ct').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updRTChart()}
+function setMQ(s,btn){mqSen=s;document.querySelectorAll('#mq-tabs .ct').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function setHS(s,btn){hsSen=s;document.querySelectorAll('#hs-tabs .ct').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderHC()}
+
+// ══════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════
+async function fetchHistory(){
+  try{const r=await fetch('/api/history?limit=500');if(!r.ok)return;const d=await r.json();histData=d.data||[];setText('hist-cnt',(d.total||histData.length)+' bản ghi');setText('sb-rec',d.total||histData.length);renderHistTbl();renderHC()}catch(e){}
+}
+function loadHist(){wsOK?sendWS({cmd:'get_history',filter:$('hist-filter').value,limit:500}):fetchHistory()}
+function renderHistTbl(){
+  const f=$('hist-filter').value;
+  let d=f==='all'?histData:histData.filter(r=>r.quality===f);
+  const body=$('hist-body');
+  const qC={good:'#48bb78',moderate:'#f6ad55',unhealthy:'#ed8936',danger:'#fc8181'};
+  const qL={good:'Tốt',moderate:'Trung bình',unhealthy:'Không lành',danger:'Nguy hiểm'};
+  if(!d.length){body.innerHTML='<tr><td colspan="7" class="empty">Không có dữ liệu</td></tr>';return}
+  body.innerHTML=d.slice(-300).reverse().map(r=>{
+    const c=qC[r.quality]||'#4a5568',l=qL[r.quality]||'--';
+    const gps=(r.lat&&r.lng)?(+r.lat).toFixed(4)+','+(+r.lng).toFixed(4):'--';
+    const t=(r.time||r.serverTime||'--').replace('T',' ').substring(0,19);
+    return`<tr><td>${t}</td><td>${r.temp??'--'}</td><td>${r.humi??'--'}</td><td>${r.dust??'--'}</td><td>${r.smoke??'--'}</td><td>${r.co??'--'}</td><td><span class="qchip" style="background:${c}18;color:${c};border:1px solid ${c}30">${l}</span></td></tr>`;
+  }).join('');
+}
+function renderHC(){
+  if(!histChart)return;
+  const f=$('hist-filter').value;
+  let d=f==='all'?histData:histData.filter(r=>r.quality===f);
+  const last=d.slice(-80);
+  histChart.data.labels=last.map(r=>(r.time||r.serverTime||'').replace('T',' ').substring(11,19));
+  histChart.data.datasets[0].data=last.map(r=>r.dust);
+  histChart.update('none');
+}
+
+// ══════════════════════════════════════════════
+// UTIL & UI HELPERS
+// ══════════════════════════════════════════════
+function initApp(){
+  initCharts();
+  initTabNavigation();
+  if($('cfg-ip')&&$('ip-in'))$('ip-in').value=$('cfg-ip').value;
+  if($('cfg-port')&&$('port-in'))$('port-in').value=$('cfg-port').value;
+  setStatus('off');
+  renderHistTbl();
+}
+function initTabNavigation(){
+  document.querySelectorAll('nav .ntab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const tab=btn.dataset.tab;
+      document.querySelectorAll('nav .ntab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-page').forEach(page=>page.classList.toggle('active', page.id==='tab-'+tab));
+    });
+  });
+}
+function $(id){return document.getElementById(id)}
+function setText(id,value){const el=$(id); if(el) el.textContent=value}
+function setStatus(state){
+  const spill=$('spill'), lbl=$('spill-lbl'), btn=$('conn-btn'), banner=$('ob-banner');
+  if(state==='on'){
+    if(spill)spill.className='spill on';
+    if(lbl)lbl.textContent='Online';
+    if(btn)btn.textContent='🔌 Ngắt';
+    if(banner)banner.style.display='none';
+  } else if(state==='cng'){
+    if(spill)spill.className='spill cng';
+    if(lbl)lbl.textContent='Đang kết nối';
+    if(btn)btn.textContent='⏳ Đang kết nối...';
+    if(banner)banner.style.display='block';
+  } else {
+    if(spill)spill.className='spill off';
+    if(lbl)lbl.textContent='Offline';
+    if(btn)btn.textContent='⚡ Kết nối';
+    if(banner)banner.style.display='block';
+  }
+}
+function clog(type,msg){
+  const log=$('console-log');
+  if(log){
+    const line=document.createElement('div');
+    line.className='fl '+(type||'i');
+    line.textContent='['+new Date().toLocaleTimeString('vi-VN',{hour12:false})+'] '+msg;
+    log.prepend(line);
+  }
+  console.log(msg);
+}
+function now(){
+  return new Date().toLocaleTimeString('vi-VN',{hour12:false});
+}
+function fmtUp(sec){
+  if(sec==null||isNaN(sec))return '--';
+  sec=Math.floor(sec);
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  return (h?`${h}h `:'') + (m?`${m}m `:'') + `${s}s`;
+}
+function addAlert(type,msg,time){
+  const list=$('alert-list');
+  if(!list) return;
+  if(alertCnt===0) list.innerHTML='';
+  const item=document.createElement('div');
+  item.className='al-item '+(type==='d'?'d':type==='w'?'i':'ok');
+  item.innerHTML=`<div class="al-msg">${msg}</div><div class="al-time">${time||now()}</div>`;
+  list.prepend(item);
+  alertCnt++;
+  const badge=$('al-badge');
+  if(badge){badge.style.display='';badge.textContent=alertCnt}
+}
+function clearAlerts(){
+  const list=$('alert-list');
+  if(list) list.innerHTML='<div class="empty">Không có cảnh báo nào ✅</div>';
+  alertCnt=0;
+  const badge=$('al-badge');
+  if(badge) badge.style.display='none';
+}
+function clearHist(){
+  histData=[];
+  renderHistTbl();
+  renderHC();
+  setText('hist-cnt','0 bản ghi');
+  setText('sb-rec','0');
+  addAlert('i','Lịch sử đã được xoá',now());
+  if(wsOK) sendWS({cmd:'clear_history'});
+}
+function clearConsole(){
+  const log=$('console-log');
+  if(log) log.innerHTML='<div class="fl i">Console ready...</div>';
+}
+function pingESP(){
+  if(wsOK){ sendWS({cmd:'ping'}); clog('i','Đã gửi ping ESP32'); }
+  else clog('w','Chưa kết nối ESP32.');
+}
+function sendManual(){
+  const el=$('manual-cmd');
+  if(!el) return;
+  try{
+    const data=JSON.parse(el.value);
+    sendWS(data);
+    clog('i','Gửi: '+JSON.stringify(data));
+  }catch(err){
+    clog('e','JSON sai: '+err.message);
+  }
+}
+function sendOLED(){
+  const mode=$('oled-mode')?.value||'all';
+  const br=$('oled-brt')?.value||200;
+  sendWS({cmd:'oled_update',mode,brightness:+br});
+  clog('i',`OLED mode=${mode} brightness=${br}`);
+}
+function connFromSettings(){
+  const ip=$('cfg-ip')?.value.trim();
+  const port=$('cfg-port')?.value.trim()||'81';
+  if(ip){
+    if($('ip-in'))$('ip-in').value=ip;
+    if($('port-in'))$('port-in').value=port;
+    connect();
+  }
+}
+function flashESP32(){
+  alert('Tính năng Flash USB chưa được hỗ trợ trong phiên bản này.');
+}
+function eraseFlash(){
+  alert('Xoá flash hiện chưa được hỗ trợ trong phiên bản này.');
+}
+
+window.addEventListener('load', initApp);
+</script>
+</body>
+</html>
